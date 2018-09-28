@@ -8,14 +8,23 @@ module.exports = {
     parser: 'babel-eslint'
   },
   extends: [
-    'plugin:vue/recommended'<% if (prettier === 'yes'){ %>,
-    'plugin:prettier/recommended'<% } %>
+    'airbnb-base',
+    'plugin:vue/strongly-recommended',
+    'plugin:prettier/recommended'
   ],
   // required to lint *.vue files
   plugins: [
-    'vue'<% if (prettier === 'yes'){ %>,
-    'prettier'<% } %>
+    'vue',
+    'prettier'
   ],
+  // 強制檢查 import 可以被正確解析 
+  settings: {
+    'import/resolver': {
+      'webpack': {
+        'config': '.eslint.resolve.config.js'
+      }
+    }
+  },
   // add your custom rules here
   rules: {
     'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',

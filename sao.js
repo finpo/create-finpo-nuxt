@@ -69,32 +69,32 @@ module.exports = {
       message: 'Use axios module',
       type: 'list',
       choices: ['no', 'yes'],
-      default: 'no'
+      default: 'yes'
     },
-    eslint: {
-      message: 'Use eslint',
-      type: 'list',
-      choices: ['no', 'yes'],
-      default: 'no'
-    },
-    prettier: {
-      message: 'Use prettier',
-      type: 'list',
-      choices: ['no', 'yes'],
-      default: 'no'
-    },
+    // eslint: {
+    //   message: 'Use eslint',
+    //   type: 'list',
+    //   choices: ['no', 'yes'],
+    //   default: 'no'
+    // },
+    // prettier: {
+    //   message: 'Use prettier',
+    //   type: 'list',
+    //   choices: ['no', 'yes'],
+    //   default: 'no'
+    // },
     author: {
       type: 'string',
       message: 'Author name',
       default: ':gitUser:',
       store: true
     },
-    pm: {
-      message: 'Choose a package manager',
-      choices: ['npm', 'yarn'],
-      type: 'list',
-      default: 'npm'
-    }
+    // pm: {
+    //   message: 'Choose a package manager',
+    //   choices: ['npm', 'yarn'],
+    //   type: 'list',
+    //   default: 'yarn'
+    // }
   },
   filters: {
     'server/index-express.js': 'server === "express"',
@@ -112,6 +112,15 @@ module.exports = {
     'frameworks/buefy/**': 'ui === "buefy"',
     '_.eslintrc.js': 'eslint === "yes"',
     '.prettierrc': 'prettier === "yes"'
+  },
+  yarnInstall: true,
+  gitInit: true,
+  data(answers) {
+    return {
+      eslint: 'yes',
+      prettier: 'yes',
+      pm: 'yarn',
+    };
   },
   move(answers) {
     const moveable = {
@@ -142,9 +151,8 @@ module.exports = {
     { meta }
   ) {
     gitInit()
-
-    if (meta.answers.pm === 'yarn') yarnInstall()
-    else npmInstall()
+    // if (meta.answers.pm === 'yarn') yarnInstall()
+    // else npmInstall()
 
     const cd = () => {
       if (isNewFolder) {
@@ -155,11 +163,11 @@ module.exports = {
     console.log()
     console.log(chalk.bold(`  To get started:\n`))
     cd()
-    console.log(`    ${meta.answers.pm} run dev\n`)
+    console.log(`    yarn run dev\n`)
     console.log(chalk.bold(`  To build & start for production:\n`))
     cd()
-    console.log(`    ${meta.answers.pm} run build`)
-    console.log(`    ${meta.answers.pm} start`)
+    console.log(`    yarn run build`)
+    console.log(`    yarn start`)
     console.log()
   }
 }
