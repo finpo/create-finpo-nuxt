@@ -1,6 +1,6 @@
 {
   "name": "create-finpo-nuxt",
-  "version": "2.1.15",
+  "version": "2.1.16",
   "description": "Create a Nuxt.js App in FINPO style.",
   "bin": "cli.js",
   "files": [
