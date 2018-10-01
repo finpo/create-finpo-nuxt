@@ -1,4 +1,4 @@
-<% if (server === 'adonis') {
+<% if (server === 'adonis') { %>
 const resolve = require('path').resolve;
 <% } %>
 module.exports = {
