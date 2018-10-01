@@ -1,6 +1,5 @@
-<% if (server === 'adonis') { %>const pkg = require('../package');
+<% if (server === 'adonis') {
 const resolve = require('path').resolve;
-<% } else { %>const pkg = require('./package');
 <% } %>
 module.exports = {
   router: {
