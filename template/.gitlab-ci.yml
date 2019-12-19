@@ -1,9 +1,7 @@
 variables:
-  APPNAME: ${CI_PROJECT_NAME}
-  REVIEW_URL: 'demo.finpo.com.tw'
-  PRODUCTION_URL: 'alpaca.finpo.com.tw'
+  region: "asia-northeast1"
 
-image: node:10-alpine
+image: node:lts-alpine
 
 cache:
   paths:
@@ -12,8 +10,8 @@ cache:
 stages:
   - install
   - test
-  - review
-  - production
+  - build
+  - deploy
 
 install:
   stage: install
@@ -32,34 +30,57 @@ test2 build:
     - yarn install
     - yarn run build
 
-review:
-  image: docker:git
-  stage: review
+build-staging:
+  stage: build
+  image: docker:latest
   services:
     - docker:dind
+  before_script:
+    - echo $CLOUDRUN_DEMO_KEY > ${HOME}/key.json
+    - cat ${HOME}/key.json | docker login -u _json_key --password-stdin https://asia.gcr.io
   script:
-  - mkdir -p ~/.ssh
-  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-  - chmod 600 ~/.ssh/id_rsa
-  - ssh-keyscan -H ${REVIEW_URL} >> ~/.ssh/known_hosts
-  - 'echo -e "User-agent: *\nDisallow: /\n" > static/robots.txt'
-  - ssh ausir@${REVIEW_URL} "dokku apps:list | grep -x ${APPNAME} || (dokku apps:create ${APPNAME}; dokku config:set ${APPNAME} DOKKU_PROXY_PORT_MAP=http:80:5000 HOST=0.0.0.0 NODE_ENV=production NODE_MODULES_CACHE=false NPM_CONFIG_PRODUCTION=false HTTP2_SUPPORTED=true DOKKU_LETSENCRYPT_EMAIL=ausir@finpo.com.tw;)"
-  - docker build --build-arg ENV_FILE=${CI_JOB_STAGE} -t dokku/${APPNAME}:latest . && docker save dokku/${APPNAME}:latest | ssh ausir@${REVIEW_URL} "sudo docker load && dokku tags:deploy ${APPNAME} latest"
-  - ssh ausir@${REVIEW_URL} "dokku letsencrypt:ls | grep -x ${APPNAME} || dokku letsencrypt ${APPNAME}"
+    - 'echo -e "User-agent: *\nDisallow: /\n" > static/robots.txt'
+    - docker build -t asia.gcr.io/finpo-demo/$CI_PROJECT_NAME:latest .
+    - docker push asia.gcr.io/finpo-demo/$CI_PROJECT_NAME:latest
   only:
     - master
 
-production:
-  image: docker:git
-  stage: production
+deploy-staging:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  before_script:
+    - echo $CLOUDRUN_DEMO_KEY > ${HOME}/key.json
+  script:
+    - gcloud auth activate-service-account --key-file ${HOME}/key.json
+    - gcloud run deploy $CI_PROJECT_NAME --platform managed --region $region --project finpo-demo --image asia.gcr.io/finpo-demo/$CI_PROJECT_NAME:latest --allow-unauthenticated
+  environment:
+    name: staging
+  only:
+    - master
+
+build-production:
+  stage: build
+  image: docker:latest
   services:
     - docker:dind
+  before_script:
+    - echo $CLOUDRUN_PRODUCTION_KEY > ${HOME}/key.json
+    - cat ${HOME}/key.json | docker login -u _json_key --password-stdin https://asia.gcr.io
   script:
-  - mkdir -p ~/.ssh
-  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-  - chmod 600 ~/.ssh/id_rsa
-  - ssh-keyscan -H ${PRODUCTION_URL} >> ~/.ssh/known_hosts
-  - ssh ausir@${PRODUCTION_URL} "dokku apps:list | grep -x ${APPNAME} || (dokku apps:create ${APPNAME}; dokku config:set ${APPNAME} DOKKU_PROXY_PORT_MAP=http:80:5000 HOST=0.0.0.0 NODE_ENV=production NODE_MODULES_CACHE=false NPM_CONFIG_PRODUCTION=false HTTP2_SUPPORTED=true DOKKU_LETSENCRYPT_EMAIL=ausir@finpo.com.tw;)"
-  - docker build --build-arg ENV_FILE=${CI_JOB_STAGE} -t dokku/${APPNAME}:latest . && docker save dokku/${APPNAME}:latest | ssh ausir@${PRODUCTION_URL} "sudo docker load && dokku tags:deploy ${APPNAME} latest"
+    - docker build -t asia.gcr.io/finpo-production/$CI_PROJECT_NAME:latest .
+    - docker push asia.gcr.io/finpo-production/$CI_PROJECT_NAME:latest
+  only:
+    - production
+
+deploy-production:
+  stage: deploy
+  image: google/cloud-sdk:latest
+  before_script:
+    - echo $CLOUDRUN_PRODUCTION_KEY > ${HOME}/key.json
+  script:
+    - gcloud auth activate-service-account --key-file ${HOME}/key.json
+    - gcloud run deploy $CI_PROJECT_NAME --platform managed --region $region --project finpo-production --image asia.gcr.io/finpo-production/$CI_PROJECT_NAME:latest --allow-unauthenticated
+  environment:
+    name: production
   only:
     - production

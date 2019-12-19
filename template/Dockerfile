@@ -1,11 +1,11 @@
-FROM node:10-alpine as builder
+FROM node:lts-alpine as builder
 ARG ENV_FILE
 WORKDIR /app
 ADD . ./
 RUN yarn install
 RUN export $(cat ./env/${ENV_FILE}.env.list | xargs) && yarn run build
 
-FROM node:10-alpine
+FROM node:lts-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 ADD package.json ./
